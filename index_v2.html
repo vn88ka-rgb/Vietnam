@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Goalkeeper Animation Demo</title>
+  <style>
+    body { margin: 0; }
+    canvas { display: block; }
+    #controls {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      z-index: 10;
+      background: rgba(0, 0, 0, 0.5);
+      color: white;
+      padding: 10px;
+    }
+  </style>
+</head>
+<body>
+
+<!-- Canvas cho Three.js -->
+<canvas id="myCanvas"></canvas>
+
+<!-- Các nút điều khiển -->
+<div id="controls">
+  <button onclick="playCatch()">Bắt bóng</button>
+  <button onclick="playDivingLeft()">Bay trái</button>
+  <button onclick="playDivingRight()">Bay phải</button>
+</div>
+
+<!-- Kết nối thư viện Three.js và FBXLoader -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/loaders/FBXLoader.js"></script>
+
+<script>
+  // Tạo scene, camera, và renderer
+  const scene = new THREE.Scene();
+  const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+  const renderer = new THREE.WebGLRenderer({ canvas: document.getElementById('myCanvas') });
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  document.body.appendChild(renderer.domElement);
+
+  // Thêm ánh sáng
+  const light = new THREE.AmbientLight(0x404040, 5); // Ánh sáng xung quanh
+  scene.add(light);
+
+  // Tạo khung thành (dạng hình hộp đơn giản)
+  const goal = new THREE.Mesh(
+    new THREE.BoxGeometry(3, 2, 0.1),
+    new THREE.MeshBasicMaterial({ color: 0xFFFFFF, wireframe: true })
+  );
+  goal.position.set(0, 0, -5);
+  scene.add(goal);
+
+  // Khai báo các biến
+  let goalkeeper, mixer, clock;
+  const loader = new THREE.FBXLoader();
+  clock = new THREE.Clock();
+
+  // Tải mô hình thủ môn và các hoạt ảnh
+  loader.load('character.fbx', (object) => {
+    goalkeeper = object;
+    scene.add(goalkeeper);
+
+    // Tải các hoạt ảnh
+    loader.load('Goalkeeper Catch.fbx', (animation) => {
+      mixer = new THREE.AnimationMixer(goalkeeper);
+      const action = mixer.clipAction(animation.animations[0]);
+      action.setLoop(THREE.LoopOnce);
+      action.clampWhenFinished = true;
+      action.play();
+    });
+
+    loader.load('Goalkeeper Diving Save Trai.fbx', (animation) => {
+      const action = mixer.clipAction(animation.animations[0]);
+      action.setLoop(THREE.LoopOnce);
+      action.clampWhenFinished = true;
+      action.play();
+    });
+
+    loader.load('Goalkeeper Diving Save Phải.fbx', (animation) => {
+      const action = mixer.clipAction(animation.animations[0]);
+      action.setLoop(THREE.LoopOnce);
+      action.clampWhenFinished = true;
+      action.play();
+    });
+
+    camera.position.set(0, 1, 5); // Đặt camera
+    animate();
+  });
+
+  // Vòng lặp render
+  function animate() {
+    requestAnimationFrame(animate);
+
+    if (mixer) {
+      mixer.update(clock.getDelta()); // Cập nhật hoạt ảnh
+    }
+
+    renderer.render(scene, camera);
+  }
+
+  // Các hàm điều khiển hoạt ảnh
+  function playCatch() {
+    if (mixer) {
+      mixer.stopAllAction();
+      const action = mixer.clipAction('Goalkeeper Catch');
+      action.play();
+    }
+  }
+
+  function playDivingLeft() {
+    if (mixer) {
+      mixer.stopAllAction();
+      const action = mixer.clipAction('Goalkeeper Diving Save Trai');
+      action.play();
+    }
+  }
+
+  function playDivingRight() {
+    if (mixer) {
+      mixer.stopAllAction();
+      const action = mixer.clipAction('Goalkeeper Diving Save Phải');
+      action.play();
+    }
+  }
+
+  // Xử lý thay đổi kích thước cửa sổ
+  window.addEventListener('resize', function () {
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+  });
+</script>
+
+</body>
+</html>
